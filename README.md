@@ -1,7 +1,7 @@
 # Expression-guided multi-modal reconstruction of native tissue structures and biological landscapes with DeepHEx
 
 
-## Introduction
+## Overview
 
 DeepHEx is a multi-modal deep learning framework designed to achieve high-resolution reconstruction of gene expression profiles by integrating histology images with spot-based spatial transcriptomics (ST) data within their native spatial context. By leveraging a self-supervised pathology foundation model and a bidirectional cross-attention mechanism, DeepHEx empowers high-fidelity biological insights, ranging from the identification of tissue architectures and tumor regions to the elucidation of cellular interactions and spatially variable gene patterns.
 
