@@ -1,0 +1,26 @@
+global:
+  directory: 'your_root_folder'
+  pseudo_radius: 55
+  superpixel_size: 16
+
+histology:
+  login: "your_huggingface_token_here"
+  model_name: "UNI"
+
+train:
+  epochs: 100
+  device: "cuda"
+  gpu_ids: [4]
+  n_states: 1
+  BCAF_embeddings: 256
+  k_neighbors: 6
+
+preprocessing:
+  visium_hd:
+    sample_size: 'square_008um'
+    raw_image_name: 'Visium_HD_Mouse_Brain_tissue_image.tif'
+    output_image_name: 'he.jpg'
+    gene_names_name: 'gene-names.txt'
+    ground_truth: 'genes_3D.pkl'
+    scale_pix_size: 0.5
+    num_top_genes: 1000
