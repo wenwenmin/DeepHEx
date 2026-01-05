@@ -115,5 +115,5 @@ python interface.py --config configs/config_demo.yaml
 
 ## Contact details
 
-If you have any questions, please contact xueshuailin@gmail.com.
+If you have any questions, please contact xueshuailin@gmail.com and minwenwen@yun.edu.cn.
 
