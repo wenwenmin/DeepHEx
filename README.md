@@ -9,7 +9,7 @@ DeepHEx is a multi-modal deep learning framework designed to achieve high-resolu
 
 
 ## Data
-The datasets used in this paper can be downloaded from url：[https://zenodo.org/records/XXXX](https://zenodo.org/records/XXXX).
+The datasets used in this paper can be downloaded from url：[https://zenodo.org/records/18153987](https://zenodo.org/records/18153987).
 
 ## Installation
 
