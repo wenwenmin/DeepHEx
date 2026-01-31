@@ -52,7 +52,7 @@ DeepHEx/
 ```
 
 
-## Demo for running code
+## Running DeepHEx
 
 Once your environment is set up, follow these three steps to ignite the process:
 
@@ -116,6 +116,7 @@ python interface.py --config configs/config_demo.yaml
 
 > **Note**: For large-scale datasets or multiple states, you can adjust the `n_states` and `gpu_ids` in the YAML file to optimize performance.
 
+### 4. Demo
 In addition, we also provide preprocessed data in the Zenodo database: [https://zenodo.org/records/18153987](https://zenodo.org/records/18153987). After updating the directory field in the YAML configuration file, the pipeline can be executed by running `interface_Demo.py`:
 
 ```bash
