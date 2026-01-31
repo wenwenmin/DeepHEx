@@ -5,11 +5,10 @@ from model import run_feature_extraction
 from pipeline import run_main
 import argparse
 
-def main():
-    config = load_config('configs/config_demo.yaml')
+def main(config_path):
+    config = load_config(config_path)
 
     run_feature_extraction(config)
-
     run_main(config)
 
 
