@@ -52,7 +52,7 @@ DeepHEx/
 ```
 
 
-## Running the Code
+## Demo for running code
 
 Once your environment is set up, follow these three steps to ignite the process:
 
