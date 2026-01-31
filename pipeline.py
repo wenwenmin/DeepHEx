@@ -266,8 +266,7 @@ def main(prefix, radius_pix, k_neighbors, embeddings, epoch=500, device='cuda', 
     n_train = cnts.shape[0]
     batch_size = min(32, n_train//16)
 
-    impute(
-            embs=embs, cnts=cnts, locs=locs, en_cnts=enhance_cnts, en_locs=enhance_locs, radius=radius, radius_pix=radius_pix,
+    impute(embs=embs, cnts=cnts, locs=locs, en_cnts=enhance_cnts, en_locs=enhance_locs, radius=radius, radius_pix=radius_pix,
             k_neighbors=k_neighbors, epochs=epoch, batch_size=batch_size, n_states=n_states, gpu_ids=gpu_ids,
             prefix=prefix, BCAF_embeddings=embeddings, load_saved=load_saved, device=device, n_jobs=1)
 
@@ -281,4 +280,5 @@ def run_main(config):
     radius_pix = config['global']['pseudo_radius'] / config['global']['superpixel_size']
     gpu_ids = config['train']['gpu_ids']
     
+
     main(dir, radius_pix, k_neighbors, BCAF_embeddings, epoch, device, n_states, gpu_ids=gpu_ids)
