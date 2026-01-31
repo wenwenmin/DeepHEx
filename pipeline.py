@@ -280,5 +280,5 @@ def run_main(config):
     radius_pix = config['global']['pseudo_radius'] / config['global']['superpixel_size']
     gpu_ids = config['train']['gpu_ids']
     
-
     main(dir, radius_pix, k_neighbors, BCAF_embeddings, epoch, device, n_states, gpu_ids=gpu_ids)
+
