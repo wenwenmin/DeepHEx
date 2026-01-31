@@ -12,6 +12,7 @@ DeepHEx is a multi-modal deep learning framework designed to achieve high-resolu
 The datasets used in this paper can be downloaded from url：[https://zenodo.org/records/18153987](https://zenodo.org/records/18153987).
 
 ## Installation
+All experiments were conducted on a single NVIDIA GeForce RTX 3090 GPU. The software has been tested and is compatible with both Windows and Linux operating systems.
 
 1. Clone repository:
 
