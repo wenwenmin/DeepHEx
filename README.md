@@ -127,3 +127,7 @@ python interface_Demo.py --config configs/config_demo.yaml
 
 If you have any questions, please contact xueshuailin@gmail.com and minwenwen@yun.edu.cn.
 
+## License
+
+This project is covered under the GPL-3.0 license.
+
