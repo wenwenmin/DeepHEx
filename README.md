@@ -1,4 +1,4 @@
-# Expression-guided multi-modal reconstruction of native tissue structures and biological landscapes with DeepHEx
+# DeepHEx enables expression-guided multimodal reconstruction of native tissue architecture and biological landscapes
 
 
 ## Overview
