@@ -17,7 +17,7 @@ All experiments were conducted on a single NVIDIA GeForce RTX 3090 GPU. The soft
 1. Clone repository:
 
 ```bash
-git clone https://github.com/minwenwen/DeepHEx.git
+git clone https://github.com/wenwenmin/DeepHEx.git
 ```
 
 2. Create virtual environment:
@@ -125,7 +125,7 @@ python interface_Demo.py --config configs/config_demo.yaml
 
 ## Contact details
 
-If you have any questions, please contact xueshuailin@gmail.com and minwenwen@yun.edu.cn.
+If you have any questions, please contact xueshuailin@gmail.com and minwenwen@ynu.edu.cn.
 
 ## License
 
