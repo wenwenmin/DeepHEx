@@ -35,6 +35,7 @@ conda activate deephex
 4. Install dependencies:
 
 ```bash
+cd DeepHEx
 pip install -r requirements.txt
 ```
 
