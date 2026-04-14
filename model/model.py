@@ -19,7 +19,7 @@ class CrossAttentionLayer(nn.Module):
         super(CrossAttentionLayer, self).__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.scale = self.num_heads ** -0.5
+        self.scale = (self.embed_dim // self.num_heads) ** -0.5
 
         self.query_proj = nn.Linear(q_dim, embed_dim)
         self.key_proj = nn.Linear(kv_dim, embed_dim)
