@@ -8,9 +8,9 @@ histology:
   model_name: "UNI"
 
 train:
-  epochs: 100
+  epochs: 400
   device: "cuda"
-  gpu_ids: [4]
+  gpu_ids: [0]
   n_states: 1
   BCAF_embeddings: 256
   k_neighbors: 6
