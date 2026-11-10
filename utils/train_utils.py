@@ -10,6 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from utils import load_pickle, save_pickle
+from .reproducibility import seed_worker, set_global_seed
 
 
 matplotlib.use('Agg')
@@ -38,7 +39,7 @@ class MetricTracker(pl.Callback):
 
 def get_model(
         model_class, model_kwargs, dataset, prefix, gpu_ids,
-        epochs=None, device='cuda', load_saved=False, **kwargs):
+        epochs=None, device='cuda', load_saved=False, seed=42, **kwargs):
     checkpoint_file = prefix + 'model.pt'
     history_file = prefix + 'history.pickle'
 
@@ -57,7 +58,7 @@ def get_model(
             model=model, gpu_ids=gpu_ids,
             model_class=model_class, model_kwargs=model_kwargs,
             dataset=dataset, epochs=epochs, device=device,
-            **kwargs)
+            seed=seed, **kwargs)
         trainer.save_checkpoint(checkpoint_file)
         print(f'Model saved to {checkpoint_file}')
         history += hist
@@ -71,12 +72,16 @@ def get_model(
 def train_model(
         dataset, batch_size, epochs, gpu_ids,
         model=None, model_class=None, model_kwargs={},
-        device='cuda'):
+        device='cuda', seed=42):
+    set_global_seed(seed)
     if model is None:
         model = model_class(**model_kwargs)
+    generator = torch.Generator()
+    generator.manual_seed(int(seed))
     dataloader = DataLoader(
             dataset, batch_size=batch_size,
-            shuffle=False)
+            shuffle=False, generator=generator,
+            worker_init_fn=seed_worker)
     tracker = MetricTracker()
     device_accelerator_dict = {
             'cuda': 'gpu',

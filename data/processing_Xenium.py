@@ -412,6 +412,24 @@ def process_Xenium(
     
     print("\n--- All processing steps completed successfully ---")
 
+
+def run_xenium_preprocessing(config):
+    params = config['preprocessing']['xenium']
+    root = Path(config['global']['directory']).expanduser().resolve()
+
+    return process_Xenium(
+        data_dir=str(root),
+        sample_subfolder=params['sample_size'],
+        align_name=params['align_name'],
+        raw_image_name=params['raw_image_name'],
+        output_image_name=params.get('output_image_name', 'he.jpg'),
+        gene_names_name=params.get('gene_names_name', 'gene-names.txt'),
+        ground_truth_name=params.get('ground_truth', 'genes_3D.pkl'),
+        scale_pix_size=float(params.get('scale_pix_size', 0.5)),
+        superpixel_size=int(config['global']['superpixel_size']),
+        pseudo_radius=float(config['global']['pseudo_radius']),
+    )
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="End-to-end Xenium processing."

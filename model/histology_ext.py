@@ -7,9 +7,14 @@ from PIL import Image
 import numpy as np
 from torch.utils.data import Dataset
 import pickle
+import os
+from time import perf_counter
+from utils import set_global_seed
 Image.MAX_IMAGE_PIXELS = None
 
-def main(prefix, login_value):
+def main(prefix, login_value=None, seed=42):
+    set_global_seed(seed)
+    start = perf_counter()
     def pad(emd, num):
         h, w = emd.shape[0], emd.shape[1]
         pad_h = (num - h % num) % num
@@ -33,8 +38,10 @@ def main(prefix, login_value):
         features = np.concatenate(features, axis=1)
         img_emb.append(features)
 
-    login(
-        login_value)  # login with your User Access Token, found at https://huggingface.co/settings/tokens
+    # HF_TOKEN is read directly by huggingface_hub.  The explicit login path is
+    # retained for users of the legacy YAML field.
+    if login_value:
+        login(login_value)
 
     model = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
     transform = create_transform(**resolve_data_config(model.pretrained_cfg, model=model))
@@ -86,10 +93,24 @@ def main(prefix, login_value):
     embs = dict(his=embs)
     with open(prefix + 'Histology_feature_map.pickle', 'wb') as file:
         pickle.dump(embs, file)
+    return {
+        "histology_image_shape": list(img.shape),
+        "feature_map_shape": [int(img_emb.shape[0]), int(img_emb.shape[1]), int(img_emb.shape[2])],
+        "uni_feature_seconds": float(perf_counter() - start),
+    }
 
 def run_feature_extraction(config):
 
     directory = config['global']['directory']
-    login = config['histology']['login']
-    
-    main(directory, login)
+    histology = config.get('histology', {})
+    login_value = histology.get('login')
+    token_env = histology.get('token_env', 'HF_TOKEN')
+    configured_token = os.environ.get(token_env)
+    if configured_token and token_env != 'HF_TOKEN':
+        # huggingface_hub and timm discover the standard HF_TOKEN variable.
+        os.environ['HF_TOKEN'] = configured_token
+    return main(
+        directory,
+        login_value,
+        seed=int(config.get('global', {}).get('seed', 42)),
+    )

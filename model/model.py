@@ -149,7 +149,7 @@ class DeepHEx(pl.LightningModule):
         x, y_mean = batch
         y_pred = self.forward(x)
         mask = get_disk_mask(self.radius_pix)
-        mask = torch.BoolTensor(mask).to('cuda')
+        mask = torch.BoolTensor(mask).to(y_pred.device)
         y_pred = y_pred.reshape(y_pred.shape[0], mask.shape[0], mask.shape[1], y_pred.shape[2])
         y_pred = torch.masked_select(y_pred, mask.unsqueeze(0).unsqueeze(-1)).view(y_pred.shape[0], -1, y_pred.shape[-1])
 

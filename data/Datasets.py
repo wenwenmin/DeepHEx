@@ -40,12 +40,25 @@ def get_patches_flat(img, locs, mask):
     shape = np.array(mask.shape)
     mask = np.ones_like(mask, dtype=bool)
     center = shape // 2
-    r = np.stack([-center, shape-center], -1)
+    if img.ndim == 2:
+        padded = np.pad(
+            img,
+            ((center[0], shape[0] - center[0] - 1), (center[1], shape[1] - center[1] - 1)),
+            mode='constant',
+            constant_values=0,
+        )
+    else:
+        padded = np.pad(
+            img,
+            ((center[0], shape[0] - center[0] - 1), (center[1], shape[1] - center[1] - 1), (0, 0)),
+            mode='constant',
+            constant_values=0,
+        )
     x_list = []
     for s in locs:
-        patch = img[
-                s[0]+r[0][0]:s[0]+r[0][1],
-                s[1]+r[1][0]:s[1]+r[1][1]]
+        row = int(s[0])
+        col = int(s[1])
+        patch = padded[row:row + shape[0], col:col + shape[1]]
 
         x = patch[mask]
         x_list.append(x)

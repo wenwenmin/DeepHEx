@@ -1,0 +1,44 @@
+global:
+  input_type: visium
+  directory: "/path/to/deephex-output"
+  pseudo_radius: 55
+  superpixel_size: 16
+  seed: 42
+
+histology:
+  token_env: HF_TOKEN
+
+train:
+  epochs: 400
+  device: cuda
+  gpu_ids: [0]
+  n_states: 1
+  BCAF_embeddings: 256
+  k_neighbors: 6
+  learning_rate: 0.0001
+  batch_size: auto
+  load_saved: false
+  enhance: true
+
+preprocessing:
+  visium:
+    outs_dir: "/path/to/spaceranger/outs"
+    image_level: auto
+    image_path: null
+    matrix_path: null
+    positions_path: null
+    scalefactors_path: null
+    output_um_per_pixel: 0.5
+    spot_diameter_um: 55.0
+    source_um_per_pixel: null
+    num_top_genes: 1000
+    min_cells: 10
+    hvg_flavor: seurat_v3
+    mask_dilation: 1
+
+export:
+  enabled: true
+  h5ad_name: deephex_expression.h5ad
+  csv: false
+  csv_name: deephex_expression.csv
+  metadata_name: run_metadata.json

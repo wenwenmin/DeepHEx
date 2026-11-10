@@ -1,8 +1,11 @@
 import multiprocessing
+from pathlib import Path
+from time import perf_counter
 import torch
 import numpy as np
 from utils import read_lines, read_string, save_pickle, load_pickle, load_tsv, load_image
 from utils import get_model as train_load_model
+from utils import export_deephex_results, set_global_seed
 from model import DeepHEx
 from data import SpotDataset, get_center_coordinates_rounded, get_patches_genes_test
 from scipy.interpolate import interp1d
@@ -30,7 +33,8 @@ def pad(emd, num):
 
 def get_locs(prefix, target_shape=None, enhance=False):
     if enhance:
-        enhance_locs = load_tsv(f'{prefix}HRlocs.csv')
+        _, enhance_locs_path = _get_enhanced_paths(prefix)
+        enhance_locs = load_tsv(enhance_locs_path)
         locs = load_tsv(f'{prefix}locs.csv')
     else:
         enhance_locs = load_tsv(f'{prefix}locs.csv')
@@ -56,7 +60,8 @@ def get_locs(prefix, target_shape=None, enhance=False):
 def get_data(prefix, enhance=False):
     gene_names = read_lines(f"{prefix}gene-names.txt")
     if enhance:
-        enhance_cnts = load_tsv(f'{prefix}HRcnts.csv')
+        enhance_cnts_path, _ = _get_enhanced_paths(prefix)
+        enhance_cnts = load_tsv(enhance_cnts_path)
         cnts = load_tsv(f'{prefix}cnts.csv')
     else:
         enhance_cnts = load_tsv(f'{prefix}cnts.csv')
@@ -73,12 +78,31 @@ def get_data(prefix, enhance=False):
     locs, enhance_locs = get_locs(prefix, target_shape=embs.shape[:2], enhance=enhance)
     return embs, cnts, enhance_cnts, locs, enhance_locs
 
+
+def _get_enhanced_paths(prefix):
+    """Return a matching pair of high-resolution count and location files.
+
+    ``GetHr.py`` writes ``HRcnts111.csv``/``HRlocs111.csv`` whereas older
+    preprocessed demos use ``HRcnts.csv``/``HRlocs.csv``.  Supporting both keeps
+    fresh runs and the released Zenodo demos compatible.
+    """
+
+    root = Path(prefix)
+    if (root / "HRcnts111.csv").is_file() and (root / "HRlocs111.csv").is_file():
+        return root / "HRcnts111.csv", root / "HRlocs111.csv"
+    if (root / "HRcnts.csv").is_file() and (root / "HRlocs.csv").is_file():
+        return root / "HRcnts.csv", root / "HRlocs.csv"
+    raise FileNotFoundError(
+        f"Neither HRcnts111.csv/HRlocs111.csv nor HRcnts.csv/HRlocs.csv "
+        f"were found in {root}"
+    )
+
 def get_model_kwargs(kwargs):
     return get_model(**kwargs)
 
 def get_model(
         x, y, en_y, locs, en_locs, radius, k_neighbors, prefix, batch_size, epochs, lr, num_embeddings, radius_pix,
-        gpu_ids, load_saved=False, device='cuda'):
+        gpu_ids, load_saved=False, device='cuda', seed=42):
 
     print('x:', x.shape, ', y:', y.shape)
 
@@ -96,7 +120,7 @@ def get_model(
                 radius_pix=radius_pix),
             dataset=dataset, prefix=prefix, gpu_ids=gpu_ids,
             batch_size=batch_size, epochs=epochs,
-            load_saved=load_saved, device=device)
+            load_saved=load_saved, device=device, seed=seed)
     model.eval()
     if device == 'cuda':
         torch.cuda.empty_cache()
@@ -194,7 +218,8 @@ def predict(h, w,
 
 def impute(
         embs, cnts, locs, en_cnts, en_locs, radius, radius_pix, k_neighbors, epochs, batch_size, prefix, BCAF_embeddings,
-        n_states=1, gpu_ids=0, load_saved=False, device='cuda', n_jobs=1):
+        n_states=1, gpu_ids=0, load_saved=False, device='cuda', n_jobs=1,
+        learning_rate=1e-4, seed=42):
 
     names = cnts.columns
 
@@ -210,8 +235,9 @@ def impute(
     kwargs_list = [
             dict(
                 x=embs, y=cnts, en_y=en_cnts, locs=locs, en_locs=en_locs, radius=radius, k_neighbors=k_neighbors,
-                batch_size=batch_size, epochs=epochs, lr=1e-4, num_embeddings=BCAF_embeddings, radius_pix=radius_pix,
-                prefix=f'{prefix}states/{i:02d}/', gpu_ids=gpu_ids, load_saved=load_saved, device=device)
+                batch_size=batch_size, epochs=epochs, lr=learning_rate, num_embeddings=BCAF_embeddings, radius_pix=radius_pix,
+                prefix=f'{prefix}states/{i:02d}/', gpu_ids=gpu_ids, load_saved=load_saved, device=device,
+                seed=int(seed) + i)
             for i in range(n_states)]
 
     if n_jobs is None or n_jobs < 1:
@@ -256,29 +282,57 @@ def impute(
 
 
 
-def main(prefix, radius_pix, k_neighbors, embeddings, epoch=500, device='cuda', n_states=5, load_saved=False, enhance=True, gpu_ids=0):
+def main(
+        prefix, radius_pix, k_neighbors, embeddings, epoch=500, device='cuda',
+        n_states=5, load_saved=False, enhance=True, gpu_ids=0,
+        learning_rate=1e-4, seed=42, batch_size=None, superpixel_size=16):
     embs, cnts, enhance_cnts, locs, enhance_locs = get_data(prefix, enhance=enhance)
 
-    factor = 16
-    ori_radius = int(read_string(f'{prefix}radius.txt'))
-    radius = ori_radius / factor
+    ori_radius = float(read_string(f'{prefix}radius.txt'))
+    radius = ori_radius / int(superpixel_size)
+    if radius_pix is None:
+        radius_pix = radius
 
     n_train = cnts.shape[0]
-    batch_size = min(32, n_train//16)
+    if batch_size in {None, "auto", "Auto", ""}:
+        batch_size = max(1, min(32, n_train // 16))
+    else:
+        batch_size = max(1, int(batch_size))
 
+    start = perf_counter()
     impute(embs=embs, cnts=cnts, locs=locs, en_cnts=enhance_cnts, en_locs=enhance_locs, radius=radius, radius_pix=radius_pix,
             k_neighbors=k_neighbors, epochs=epoch, batch_size=batch_size, n_states=n_states, gpu_ids=gpu_ids,
-            prefix=prefix, BCAF_embeddings=embeddings, load_saved=load_saved, device=device, n_jobs=1)
+            prefix=prefix, BCAF_embeddings=embeddings, load_saved=load_saved, device=device, n_jobs=1,
+            learning_rate=learning_rate, seed=seed)
+    return {
+        "batch_size": int(batch_size),
+        "n_training_spots": int(n_train),
+        "train_inference_seconds": float(perf_counter() - start),
+    }
 
-def run_main(config):
+def run_main(config, *, write_exports=True):
     dir = config['global']['directory']
     epoch = config['train']['epochs']
     device = config['train']['device']
-    n_states = config['train']['n_states']
+    n_states = int(config['train'].get('n_states', 1))
     BCAF_embeddings = config['train']['BCAF_embeddings']
     k_neighbors = config['train']['k_neighbors']
-    radius_pix = config['global']['pseudo_radius'] / config['global']['superpixel_size']
+    radius_pix = None
     gpu_ids = config['train']['gpu_ids']
-    
-    main(dir, radius_pix, k_neighbors, BCAF_embeddings, epoch, device, n_states, gpu_ids=gpu_ids)
+    learning_rate = float(config['train'].get('learning_rate', 1e-4))
+    seed = int(config['global'].get('seed', 42))
+    batch_size = config['train'].get('batch_size', 'auto')
+    load_saved = bool(config['train'].get('load_saved', False))
+    enhance = bool(config['train'].get('enhance', True))
+
+    set_global_seed(seed)
+    stage_metadata = main(
+        dir, radius_pix, k_neighbors, BCAF_embeddings, epoch, device,
+        n_states, load_saved=load_saved, enhance=enhance, gpu_ids=gpu_ids,
+        learning_rate=learning_rate, seed=seed, batch_size=batch_size,
+        superpixel_size=int(config['global']['superpixel_size']),
+    )
+    if not write_exports:
+        return stage_metadata
+    return export_deephex_results(dir, config, stage_metadata=stage_metadata)
 

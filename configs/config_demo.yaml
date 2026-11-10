@@ -1,10 +1,12 @@
 global:
+  input_type: visium_hd
   directory: 'your_root_folder'
   pseudo_radius: 55
   superpixel_size: 16
+  seed: 42
 
 histology:
-  login: "your_huggingface_token_here"
+  token_env: HF_TOKEN
   model_name: "UNI"
 
 train:
@@ -14,6 +16,10 @@ train:
   n_states: 1
   BCAF_embeddings: 256
   k_neighbors: 6
+  learning_rate: 0.0001
+  batch_size: auto
+  load_saved: false
+  enhance: true
 
 preprocessing:
   visium_hd:
@@ -24,3 +30,10 @@ preprocessing:
     ground_truth: 'genes_3D.pkl'
     scale_pix_size: 0.5
     num_top_genes: 1000
+
+export:
+  enabled: true
+  h5ad_name: deephex_expression.h5ad
+  csv: false
+  csv_name: deephex_expression.csv
+  metadata_name: run_metadata.json

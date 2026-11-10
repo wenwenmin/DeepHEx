@@ -48,6 +48,8 @@ DeepHEx/
 ├── data/         # Data preprocessing and Dataset classes
 ├── model/        # feature extraction, expression enhancement, and core network
 ├── utils/        # Training engines and general utilities
+├── notebooks/    # Step-by-step standard Visium and Visium HD tutorials
+├── scripts/      # Environment check, data download and preprocessing commands
 ├── interface.py  # Main script bridging data preprocessing and model training
 └── pipeline.py   # Main script for model training
 ```
@@ -63,17 +65,64 @@ DeepHEx utilizes the **UNI** pathology foundation model for histological feature
 
 * Request access to the UNI model on [https://huggingface.co/mahmoodlab/UNI](https://huggingface.co/mahmoodlab/UNI).
 * Generate your Hugging Face Access Token.
-* Fill in your token in the `login` field within the configuration file:
+* Export the token as an environment variable so credentials are not stored in the repository:
 
-```yaml
-# configs/config_demo.yaml
-histology:
-  login: "your_huggingface_token_here"
+```bash
+export HF_TOKEN="your_huggingface_token_here"
 ```
 
-### 2. Prepare Your Data
+## Workflow at a glance
+
+| Step | Input and operation | Output |
+| --- | --- | --- |
+| Prepare input | Load a Space Ranger `outs` directory, select in-tissue spots and highly variable genes, rescale the histology image, and create a tissue mask. | Spatial coordinates, selected expression matrix, aligned image, and tissue mask. |
+| Extract features | Apply the pretrained UNI model to histology patches. | Histological features on the superpixel grid. |
+| Enhance expression | Interpolate the spot-based expression profiles. | High-density expression profiles for multimodal fusion. |
+| Train and reconstruct | Train DeepHEx using histological features and high-density expression profiles, then run inference. | Superpixel-level expression estimates. |
+| Export and inspect | Export expression and coordinates, and visualize the reconstructed profiles. | An `.h5ad` expression matrix, coordinates, run metadata, and visualizations. |
+
+The standard Visium configuration uses 0.5 µm per pixel, 16-pixel superpixels, up to 1,000 highly variable genes, six neighboring expression locations, a 256-dimensional BCAF embedding, and 400 training epochs with a learning rate of 0.0001. These values can be changed in `configs/config_visium.yaml`. The tutorials explain the input files, intermediate results, and available configuration options.
+
+## Standard Visium quick start
+
+The standard Visium adapter accepts a Space Ranger `outs` directory containing `filtered_feature_bc_matrix.h5`, `spatial/tissue_positions.csv`, `spatial/scalefactors_json.json`, and `spatial/tissue_hires_image.png`. The tutorial [notebooks/DeepHEx_standard_Visium_tutorial.ipynb](notebooks/DeepHEx_standard_Visium_tutorial.ipynb) explains and runs each stage separately.
+
+Copy `configs/config_visium.yaml`, update `directory` and `outs_dir`, then run:
+
+```bash
+python interface.py --config configs/config_visium.yaml --input-type visium
+```
+
+To prepare the input files without training:
+
+```bash
+python scripts/prepare_visium.py \
+  --outs /path/to/spaceranger/outs \
+  --output-dir /path/to/deephex-output
+```
+
+The final result is written to `deephex_expression.h5ad`, with matching `deephex_coordinates.csv` and `run_metadata.json`. The h5ad matrix has superpixels in rows and selected genes in columns; spatial coordinates are stored in `obs`.
+
+The public tutorial dataset is the 10x Genomics **Human Cervical Cancer (FFPE)** sample: <https://www.10xgenomics.com/datasets/human-cervical-cancer-1-standard>.
+
+The notebook downloads this public sample automatically. The same files can be prepared on the command line with:
+
+```bash
+python scripts/download_example_visium.py \
+  --dataset human_cervical_cancer_1 \
+  --output-dir example_data/visium_human_cervical_cancer_1
+```
+
+The repository also includes the tested `mouse_brain_sagittal_anterior` preset.
+
+Set `USE_PUBLIC_EXAMPLE = False` in the notebook and provide `USER_SPACERANGER_OUTS` when running your own Space Ranger output.
+
+
+### 2. Prepare Visium HD data
 
 We take the simulation experiment based on Visium HD data as an example. Please download the demo dataset from the [10x Genomics official website](https://www.10xgenomics.com/datasets/visium-hd-cytassist-gene-expression-libraries-of-mouse-brain-he):
+
+The Visium HD tutorial is [notebooks/DeepHEx_Visium_HD_tutorial.ipynb](notebooks/DeepHEx_Visium_HD_tutorial.ipynb). By default, it validates the preprocessed mouse brain inputs, uses an existing checkpoint for inference, exports the result, and compares reconstructed expression with the ground truth. Optional steps cover rebuilding intermediate inputs and training a model.
 
 1.  **Raw ST Data**: Navigate to the **Output and supplemental files** section and download **Binned outputs (all bin levels)**.
 2.  **Raw Histology Image**: Navigate to the **Input files** section and download the **Microscope image**.
